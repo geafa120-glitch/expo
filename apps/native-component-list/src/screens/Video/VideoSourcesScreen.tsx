@@ -22,6 +22,9 @@ export default function VideoSourcesScreen() {
 
   const player = useVideoPlayer(statefulSource, (player) => {
     player.play();
+    player.bufferOptions = {
+      preferredForwardBufferDuration: 100,
+    };
     player.loop = true;
   });
 

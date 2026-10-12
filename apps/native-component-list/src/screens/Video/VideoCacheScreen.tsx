@@ -51,6 +51,9 @@ export default function VideoCacheScreen() {
 
   const player = useVideoPlayer(currentSource, (player) => {
     player.loop = true;
+    player.bufferOptions = {
+      preferredForwardBufferDuration: 100,
+    };
     player.play();
   });
 

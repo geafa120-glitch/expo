@@ -1,4 +1,5 @@
 internal import ExpoModulesJSI_Cxx
+import Foundation
 internal import jsi
 
 /// Base class for JS object's native state.
@@ -80,11 +81,16 @@ open class JavaScriptNativeState {
     guard let context else {
       return
     }
-    let unmanagedContext = Unmanaged<JavaScriptNativeState>.fromOpaque(context)
-    let nativeState = unmanagedContext.takeUnretainedValue()
+    // Hermes runs native state finalizers on a background thread that never drains its autorelease
+    // pool. Without a local pool, objects autoreleased while tearing down the native state (and the
+    // objects it owns) are never released.
+//    autoreleasepool {
+      let unmanagedContext = Unmanaged<JavaScriptNativeState>.fromOpaque(context)
+      let nativeState = unmanagedContext.takeUnretainedValue()
 
-    nativeState.deallocator?(nativeState)
-    unmanagedContext.release()
+      nativeState.deallocator?(nativeState)
+      unmanagedContext.release()
+//    }
   }
 
   /// Sets a deallocator, a closure that is invoked when the underlying C++ pointee

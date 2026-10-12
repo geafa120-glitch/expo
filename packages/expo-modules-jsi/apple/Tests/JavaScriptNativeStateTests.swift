@@ -1,4 +1,5 @@
 import ExpoModulesJSI
+import Foundation
 import Testing
 
 @Suite
@@ -140,6 +141,34 @@ struct JavaScriptNativeStateTests {
     object2.unsetNativeState()
     runtime.collectGarbage { deallocatorCallCount == 1 }
     #expect(deallocatorCallCount == 1)
+  }
+
+  @Test
+  func `objects autoreleased by the deallocator are released once it returns`() throws {
+    var deallocatorCalled = false
+    weak var autoreleasedObject: NSObject?
+    let object = runtime.createObject()
+    let nativeState = CustomNativeState()
+    nativeState.setDeallocator { _ in
+      let autoreleased = NSObject()
+      autoreleasedObject = autoreleased
+      _ = Unmanaged.passRetained(autoreleased).autorelease()
+      deallocatorCalled = true
+    }
+    object.setNativeState(nativeState)
+    object.unsetNativeState()
+
+    runtime.collectGarbage { deallocatorCalled }
+    #expect(deallocatorCalled == true)
+
+    // Hermes runs native state finalizers on a background thread whose autorelease pool never
+    // drains, so anything autoreleased there stays alive unless the deallocator drains its own pool.
+    // The pool is drained just after the deallocator returns, so give the finalizer thread a moment.
+    let deadline = Date().addingTimeInterval(2)
+    while autoreleasedObject != nil && Date() < deadline {
+      Thread.sleep(forTimeInterval: 0.01)
+    }
+    #expect(autoreleasedObject == nil)
   }
 
   @Test

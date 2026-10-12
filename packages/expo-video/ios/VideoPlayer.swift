@@ -331,6 +331,7 @@ internal final class VideoPlayer: SharedRef<AVPlayer>, Hashable, VideoPlayerObse
   }
 
   private func releasePlayer() {
+    print("Relase called!")
     let alreadyReleased = didRelease.withLock { didRelease in
       defer {
         didRelease = true
@@ -511,5 +512,9 @@ internal final class VideoPlayer: SharedRef<AVPlayer>, Hashable, VideoPlayerObse
 
   static func == (lhs: VideoPlayer, rhs: VideoPlayer) -> Bool {
     return ObjectIdentifier(lhs) == ObjectIdentifier(rhs)
+  }
+
+  override func getAdditionalMemoryPressure() -> Int {
+    return 30_000_000
   }
 }
